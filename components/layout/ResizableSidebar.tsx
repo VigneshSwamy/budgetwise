@@ -66,7 +66,7 @@ export default function ResizableSidebar({
 
   return (
     <div className="min-h-[100svh] bg-[#FBF8F3] text-[#3D3D3D]">
-      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E0D8] bg-white/90 px-4 py-3 backdrop-blur md:hidden">
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E0D8] bg-white/95 px-4 py-3 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -100,7 +100,7 @@ export default function ResizableSidebar({
             className="absolute inset-0 bg-black/30"
             aria-label="Close navigation"
           />
-          <aside className="relative z-40 h-full w-[80vw] max-w-xs bg-white/95 px-5 py-6 shadow-lg">
+          <aside className="relative z-40 h-full w-[80vw] max-w-xs bg-white/95 px-5 pb-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] shadow-lg">
             <div className="mb-6 flex items-center justify-between">
               <span className="text-sm font-semibold text-[#4A4A4A]">Menu</span>
               <button

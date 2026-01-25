@@ -157,17 +157,17 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">Dashboard</h1>
-          <p className="text-sm text-stone-500 sm:text-base">
+          <h1 className="text-lg font-bold text-stone-900 sm:text-2xl">Dashboard</h1>
+          <p className="text-xs text-stone-500 sm:text-base">
             Welcome back{groupName ? `, ${groupName}` : ''}. Here&apos;s your financial overview.
           </p>
         </div>
         {firstGroupId ? (
           <AddTransactionChooser
             groupId={firstGroupId}
-            buttonClassName="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2a7d66] px-5 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#1f6f5b] sm:w-auto"
+            buttonClassName="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2a7d66] px-4 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#1f6f5b] sm:w-auto"
           />
         ) : (
           <Link
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft-md sm:p-6">
+            <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-soft-md sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-medium text-stone-500">Monthly Budget</p>
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <span
-                  className={`rounded-full px-4 py-2 text-sm font-medium ${
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
                     totalSpent > totalBudget
                       ? 'bg-terracotta-100 text-terracotta-700'
                       : 'bg-sage-100 text-sage-700'
@@ -255,19 +255,19 @@ export default async function DashboardPage() {
                   {transactions.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                       {transactions.map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between p-3 sm:p-4">
-                          <div className="flex items-center gap-4">
+                        <div key={tx.id} className="flex items-start justify-between gap-3 p-3 sm:items-center sm:p-4">
+                          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                             <CategoryIcon category={tx.category} />
-                            <div>
-                              <p className="font-medium text-stone-900">{tx.name}</p>
-                              <p className="text-sm text-stone-500">{tx.category}</p>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-stone-900">{tx.name}</p>
+                              <p className="text-xs text-stone-500 sm:text-sm">{tx.category}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-stone-900">
+                            <p className="text-sm font-semibold text-stone-900 sm:text-base">
                               -${tx.amount.toFixed(2)}
                             </p>
-                            <p className="text-xs text-stone-400">{tx.date}</p>
+                            <p className="text-[11px] text-stone-400 sm:text-xs">{tx.date}</p>
                           </div>
                         </div>
                       ))}
@@ -296,14 +296,14 @@ export default async function DashboardPage() {
                   {drafts.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                       {drafts.map((draft) => (
-                        <div key={draft.id} className="flex items-center justify-between p-3 sm:p-4">
-                          <div>
-                            <p className="font-medium text-stone-900">
+                        <div key={draft.id} className="flex items-start justify-between gap-3 p-3 sm:items-center sm:p-4">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-stone-900">
                               {draft.merchant || 'Untitled draft'}
                             </p>
-                            <p className="text-xs text-stone-500">{draft.date}</p>
+                            <p className="text-[11px] text-stone-500 sm:text-xs">{draft.date}</p>
                           </div>
-                          <p className="text-sm font-semibold text-stone-800">
+                          <p className="text-sm font-semibold text-stone-800 sm:text-base">
                             ${draft.amount.toFixed(2)}
                           </p>
                         </div>
