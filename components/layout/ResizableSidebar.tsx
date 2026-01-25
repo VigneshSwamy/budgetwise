@@ -65,7 +65,7 @@ export default function ResizableSidebar({
   }, [handleMouseMove, handleMouseUp])
 
   return (
-    <div className="min-h-screen bg-[#FBF8F3] text-[#3D3D3D]">
+    <div className="min-h-[100svh] bg-[#FBF8F3] text-[#3D3D3D]">
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E0D8] bg-white/80 px-4 py-3 backdrop-blur md:hidden">
         <button
           type="button"
@@ -99,7 +99,7 @@ export default function ResizableSidebar({
             className="absolute inset-0 bg-black/30"
             aria-label="Close navigation"
           />
-          <aside className="relative z-40 h-full w-72 bg-white/90 px-6 py-6 shadow-lg">
+          <aside className="relative z-40 h-full w-[80vw] max-w-xs bg-white/90 px-5 py-6 shadow-lg">
             <div className="mb-6 flex items-center justify-between">
               <span className="text-sm font-semibold text-[#4A4A4A]">Menu</span>
               <button
@@ -116,7 +116,7 @@ export default function ResizableSidebar({
       ) : null}
 
       <div className="md:pl-0" style={{ paddingLeft: isDesktop ? width : 0 }}>
-        <div className="w-full px-4 py-6 sm:px-6 sm:py-8 md:px-10">{children}</div>
+        <div className="w-full px-4 py-5 sm:px-6 sm:py-7 md:px-8">{children}</div>
       </div>
     </div>
   )

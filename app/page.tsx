@@ -39,7 +39,7 @@ export default async function Home() {
 
   // Not logged in - show welcome/onboarding screen
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#FBF8F3] px-6 py-16 text-[#4A4A4A]">
+    <main className="relative min-h-screen overflow-hidden bg-[#FBF8F3] px-4 py-12 text-[#4A4A4A] sm:px-6 sm:py-16">
       <HomeSessionRedirect />
       <div className="noise-overlay" />
 
@@ -59,18 +59,18 @@ export default async function Home() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center text-center">
-        <div className="space-y-6">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-[#8FA888] text-[#FBF8F3] shadow-xl shadow-[#8FA888]/20">
-            <span className="text-2xl font-semibold tracking-tight">BW</span>
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-2xl flex-col items-center justify-center text-center sm:max-w-3xl">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[28px] bg-[#8FA888] text-[#FBF8F3] shadow-xl shadow-[#8FA888]/20 sm:h-20 sm:w-20">
+            <span className="text-xl font-semibold tracking-tight sm:text-2xl">BW</span>
           </div>
-          <h1 className="text-5xl font-bold tracking-tight text-[#3D3D3D] sm:text-6xl">
+          <h1 className="text-4xl font-bold tracking-tight text-[#3D3D3D] sm:text-5xl md:text-6xl">
             BudgetWise
           </h1>
-          <p className="text-xl font-medium text-[#6B6B6B] sm:text-2xl">
+          <p className="text-base font-medium text-[#6B6B6B] sm:text-xl md:text-2xl">
             Elevate shared spending with calm, precise control
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-[#6B6B6B]">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-[#6B6B6B] sm:gap-3 sm:text-sm">
             {[
               'Executive Budgets',
               'Equitable Splits',
@@ -79,27 +79,27 @@ export default async function Home() {
             ].map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-white/60 bg-white/60 px-4 py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm"
+                className="rounded-full border border-white/60 bg-white/60 px-3 py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm sm:px-4"
               >
                 {item}
               </span>
             ))}
           </div>
-          <p className="text-sm text-[#6B6B6B]">
+          <p className="text-xs text-[#6B6B6B] sm:text-sm">
             Sign in or create an account to continue.
           </p>
         </div>
 
-        <div className="mt-10 flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
+        <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:gap-4">
           <Link
             href="/signup"
-            className="flex items-center justify-center gap-2 rounded-full bg-[#8FA888] px-8 py-4 text-lg font-semibold text-[#FBF8F3] shadow-lg shadow-[#8FA888]/20 transition hover:bg-[#7E9676] focus:outline-none focus:ring-2 focus:ring-[#8FA888]/30 focus:ring-offset-2"
+            className="flex items-center justify-center gap-2 rounded-full bg-[#8FA888] px-6 py-3 text-base font-semibold text-[#FBF8F3] shadow-lg shadow-[#8FA888]/20 transition hover:bg-[#7E9676] focus:outline-none focus:ring-2 focus:ring-[#8FA888]/30 focus:ring-offset-2 sm:px-8 sm:py-4 sm:text-lg"
           >
             Sign up
           </Link>
           <Link
             href="/login"
-            className="rounded-full border-2 border-[#E5E0D8] bg-white/50 px-8 py-4 text-lg font-semibold text-[#6B6B6B] shadow-sm transition hover:border-[#8FA888] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8FA888]/20 focus:ring-offset-2"
+            className="rounded-full border-2 border-[#E5E0D8] bg-white/50 px-6 py-3 text-base font-semibold text-[#6B6B6B] shadow-sm transition hover:border-[#8FA888] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8FA888]/20 focus:ring-offset-2 sm:px-8 sm:py-4 sm:text-lg"
           >
             Sign in
           </Link>

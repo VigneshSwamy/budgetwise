@@ -156,31 +156,31 @@ export default async function DashboardPage() {
   const categoryColors = ['#8B9D83', '#D4A574', '#C89B8C', '#8B9D83', '#D4A574']
 
   return (
-    <main className="space-y-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-stone-900">Dashboard</h1>
-            <p className="text-stone-500">
-              Welcome back{groupName ? `, ${groupName}` : ''}. Here&apos;s your financial overview.
-            </p>
-          </div>
-          {firstGroupId ? (
-            <AddTransactionChooser
-              groupId={firstGroupId}
-              buttonClassName="inline-flex items-center gap-2 rounded-full bg-[#2a7d66] px-5 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#1f6f5b]"
-            />
-          ) : (
-            <Link
-              href="/groups/create"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#1f6f5b] px-4 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#195a4a]"
-            >
-              + Create Group
-            </Link>
-          )}
+    <main className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">Dashboard</h1>
+          <p className="text-sm text-stone-500 sm:text-base">
+            Welcome back{groupName ? `, ${groupName}` : ''}. Here&apos;s your financial overview.
+          </p>
         </div>
+        {firstGroupId ? (
+          <AddTransactionChooser
+            groupId={firstGroupId}
+            buttonClassName="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2a7d66] px-5 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#1f6f5b] sm:w-auto"
+          />
+        ) : (
+          <Link
+            href="/groups/create"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f6f5b] px-4 py-2 text-sm font-medium text-white shadow-soft-md hover:bg-[#195a4a] sm:w-auto"
+          >
+            + Create Group
+          </Link>
+        )}
+      </div>
 
         {groups.length === 0 ? (
-          <div className="rounded-xl border border-stone-200 bg-white p-8 text-center shadow-soft-md">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 text-center shadow-soft-md sm:p-8">
             <p className="mb-4 text-stone-600">
               You don&apos;t have any groups yet. Create one to start tracking.
             </p>
@@ -193,12 +193,12 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-soft-md">
+            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft-md sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-medium text-stone-500">Monthly Budget</p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-stone-900">
+                    <span className="text-3xl font-bold text-stone-900 sm:text-4xl">
                       ${totalSpent.toFixed(2)}
                     </span>
                     <span className="text-stone-400">
@@ -255,7 +255,7 @@ export default async function DashboardPage() {
                   {transactions.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                       {transactions.map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between p-4">
+                        <div key={tx.id} className="flex items-center justify-between p-3 sm:p-4">
                           <div className="flex items-center gap-4">
                             <CategoryIcon category={tx.category} />
                             <div>
@@ -296,7 +296,7 @@ export default async function DashboardPage() {
                   {drafts.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                       {drafts.map((draft) => (
-                        <div key={draft.id} className="flex items-center justify-between p-4">
+                        <div key={draft.id} className="flex items-center justify-between p-3 sm:p-4">
                           <div>
                             <p className="font-medium text-stone-900">
                               {draft.merchant || 'Untitled draft'}

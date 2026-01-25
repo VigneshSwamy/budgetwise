@@ -65,20 +65,20 @@ function LoginContent() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md space-y-8">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-16">
+      <div className="w-full max-w-sm space-y-6 sm:max-w-md sm:space-y-8">
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#8FA888] text-[#FBF8F3] shadow-xl shadow-[#8FA888]/20">
-            <span className="text-lg font-semibold tracking-tight">BW</span>
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#8FA888] text-[#FBF8F3] shadow-xl shadow-[#8FA888]/20 sm:mb-6 sm:h-16 sm:w-16">
+            <span className="text-base font-semibold tracking-tight sm:text-lg">BW</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#3D3D3D]">Welcome back</h1>
-          <p className="mt-3 text-sm text-[#6B6B6B]">
+          <h1 className="text-2xl font-bold text-[#3D3D3D] sm:text-3xl">Welcome back</h1>
+          <p className="mt-2 text-xs text-[#6B6B6B] sm:mt-3 sm:text-sm">
             Elevate shared spending with calm, precise control
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-white/60 bg-white/70 p-8 shadow-[0_18px_50px_rgba(61,61,61,0.08)] backdrop-blur-sm">
-          <h2 className="mb-6 text-xl font-semibold text-[#3D3D3D]">Sign in</h2>
+        <div className="rounded-[24px] border border-white/60 bg-white/70 p-6 shadow-[0_18px_50px_rgba(61,61,61,0.08)] backdrop-blur-sm sm:rounded-[28px] sm:p-8">
+          <h2 className="mb-5 text-lg font-semibold text-[#3D3D3D] sm:mb-6 sm:text-xl">Sign in</h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
