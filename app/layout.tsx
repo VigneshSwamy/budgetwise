@@ -5,8 +5,21 @@ import './globals.css'
 const dmSans = DM_Sans({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  applicationName: 'BudgetWise',
   title: 'BudgetWise - Control shared spending without stress',
   description: 'A shared budgeting and expense-splitting web app that lets groups control monthly spending with fixed budgets.',
+  themeColor: '#FBF8F3',
+  appleWebApp: {
+    capable: true,
+    title: 'BudgetWise',
+    statusBarStyle: 'default',
+  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
