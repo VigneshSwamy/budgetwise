@@ -1,0 +1,8 @@
+.env*
+**/*secret*
+**/*credentials*
+**/*.pem
+supabase/.temp/**
+node_modules/**
+dist/**
+.next/**
