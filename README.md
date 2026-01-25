@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# budgetwise
-budgetwise app
-=======
 # BudgetWise
 
 A shared budgeting and expense-splitting web app that lets groups control monthly spending with fixed budgets, while still allowing Splitwise-style tracking when expenses are added later.
@@ -57,4 +53,3 @@ BudgetWise/
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - Run TypeScript type checking
->>>>>>> c504b18 (Commit the running version of budgetwise)
