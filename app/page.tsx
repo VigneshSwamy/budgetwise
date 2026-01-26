@@ -39,7 +39,7 @@ export default async function Home() {
 
   // Not logged in - show welcome/onboarding screen
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#FBF8F3] px-4 py-12 text-[#4A4A4A] sm:px-6 sm:py-16">
+    <main className="safe-area relative min-h-screen overflow-hidden bg-[#FBF8F3] px-4 py-12 text-[#4A4A4A] sm:px-6 sm:py-16">
       <HomeSessionRedirect />
       <div className="noise-overlay" />
 

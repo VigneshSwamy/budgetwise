@@ -156,7 +156,7 @@ export default async function DashboardPage() {
   const categoryColors = ['#8B9D83', '#D4A574', '#C89B8C', '#8B9D83', '#D4A574']
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
+    <main className="safe-area-bottom mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-stone-900 sm:text-2xl">Dashboard</h1>
