@@ -66,12 +66,12 @@ export default function ResizableSidebar({
 
   return (
     <div className="min-h-[100svh] w-full max-w-[100vw] overflow-x-hidden bg-[#FBF8F3] text-[#3D3D3D]">
-      <div className="safe-area-top sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E0D8] bg-white/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="safe-area-top sticky top-0 z-40 flex items-center justify-between border-b border-[#E5E0D8] bg-white/95 px-4 py-3 backdrop-blur md:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation"
-          className="relative z-30 flex h-14 w-14 touch-manipulation items-center justify-center rounded-2xl border border-[#DAD4C9] bg-white text-xl font-semibold text-[#3F3F3F] shadow-lg shadow-[#E5E0D8]/80 ring-1 ring-[#F0EADF] transition active:scale-95"
+          className="relative z-50 flex h-16 w-16 touch-manipulation items-center justify-center rounded-2xl border-2 border-[#D6CFC4] bg-white text-2xl font-semibold text-[#2F2F2F] shadow-xl shadow-[#E5E0D8]/80 ring-2 ring-[#F3EDE3] transition active:scale-95"
         >
           ☰
         </button>
