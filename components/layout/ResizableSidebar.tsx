@@ -15,7 +15,7 @@ export default function ResizableSidebar({
 }) {
   const [width, setWidth] = useState(MIN_WIDTH)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(true)
+  const [isDesktop, setIsDesktop] = useState(false)
   const draggingRef = useRef(false)
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function ResizableSidebar({
   }, [handleMouseMove, handleMouseUp])
 
   return (
-    <div className="min-h-[100svh] overflow-x-hidden bg-[#FBF8F3] text-[#3D3D3D]">
+    <div className="min-h-[100svh] w-full max-w-[100vw] overflow-x-hidden bg-[#FBF8F3] text-[#3D3D3D]">
       <div className="safe-area-top sticky top-0 z-20 flex items-center justify-between border-b border-[#E5E0D8] bg-white/95 px-4 py-3 backdrop-blur md:hidden">
         <button
           type="button"
@@ -116,7 +116,15 @@ export default function ResizableSidebar({
         </div>
       ) : null}
 
-      <div className="md:pl-0" style={{ paddingLeft: isDesktop ? width : 0 }}>
+      <div
+        className="min-w-0 md:pl-0"
+        style={{
+          paddingLeft: isDesktop ? width : 0,
+          width: '100%',
+          maxWidth: '100vw',
+          overflowX: 'hidden',
+        }}
+      >
         <div className="w-full overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 md:px-8">
           {children}
         </div>

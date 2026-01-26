@@ -156,8 +156,8 @@ export default async function DashboardPage() {
   const categoryColors = ['#8B9D83', '#D4A574', '#C89B8C', '#8B9D83', '#D4A574']
 
   return (
-    <main className="safe-area-bottom mx-auto w-full max-w-6xl space-y-6 overflow-x-hidden sm:space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <main className="safe-area-bottom mx-auto w-full max-w-6xl min-w-0 space-y-6 overflow-x-hidden sm:space-y-8">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-stone-900 sm:text-2xl">Dashboard</h1>
           <p className="text-xs text-stone-500 sm:text-base">
@@ -240,7 +240,7 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex min-w-0 items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-stone-800">Recent Transactions</h2>
                   {firstGroupId && (
                     <Link
@@ -281,7 +281,7 @@ export default async function DashboardPage() {
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex min-w-0 items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-stone-800">Draft Expenses</h2>
                   {firstGroupId && (
                     <Link
@@ -318,7 +318,7 @@ export default async function DashboardPage() {
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex min-w-0 items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-stone-800">Top Categories</h2>
                   <Link
                     href={firstGroupId ? `/groups/${firstGroupId}/insights` : '/groups/create'}
@@ -361,7 +361,7 @@ export default async function DashboardPage() {
             </div>
 
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-stone-800">Balances</h2>
                 <span className="text-sm text-stone-500">Net position</span>
               </div>
@@ -371,9 +371,9 @@ export default async function DashboardPage() {
                     {balances.map((balance) => (
                       <div
                         key={balance.user_id}
-                        className="flex items-center justify-between rounded-lg border border-stone-100 px-4 py-3"
+                        className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-stone-100 px-4 py-3"
                       >
-                        <div className="text-sm font-medium text-stone-700">
+                        <div className="min-w-0 truncate text-sm font-medium text-stone-700">
                           {balance.display_name || `Member ${balance.user_id.slice(0, 6)}`}
                         </div>
                         <div
@@ -399,7 +399,7 @@ export default async function DashboardPage() {
 
             {impactBreakdown ? (
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex min-w-0 items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-stone-800">
                     Budget Impact
                   </h2>
