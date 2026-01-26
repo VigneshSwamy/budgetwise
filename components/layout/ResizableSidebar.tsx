@@ -71,7 +71,7 @@ export default function ResizableSidebar({
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E5E0D8] bg-white/90 text-base font-semibold text-[#4A4A4A] shadow-sm"
+          className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-[#DAD4C9] bg-white text-lg font-semibold text-[#3F3F3F] shadow-md shadow-[#E5E0D8]/70 ring-1 ring-[#EFE9DE] transition active:scale-95"
         >
           ☰
         </button>
