@@ -65,7 +65,7 @@ function LoginContent() {
   }
 
   return (
-    <main className="safe-area flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-16">
+    <main className="safe-area flex min-h-screen flex-col items-center justify-center overflow-x-hidden px-4 py-12 sm:px-6 sm:py-16">
       <div className="w-full max-w-sm space-y-6 sm:max-w-md sm:space-y-8">
         <div className="text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#8FA888] text-[#FBF8F3] shadow-xl shadow-[#8FA888]/20 sm:mb-6 sm:h-16 sm:w-16">
