@@ -39,6 +39,10 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isRecorderSupported =
+    typeof window !== 'undefined' &&
+    typeof MediaRecorder !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia
 
   const parsed = useMemo(() => parseVoiceText(voiceText), [voiceText])
 
@@ -180,8 +184,8 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
 
   const handleStartRecording = async () => {
     setError(null)
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Recording not supported in this browser.')
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      fileInputRef.current?.click()
       return
     }
 
@@ -189,10 +193,6 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
       if (recordedAudioUrl) {
         URL.revokeObjectURL(recordedAudioUrl)
         setRecordedAudioUrl(null)
-      }
-      if (typeof MediaRecorder === 'undefined') {
-        fileInputRef.current?.click()
-        return
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -265,6 +265,27 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
                 {isRecording ? 'Stop recording' : 'Record expense'}
               </button>
             </div>
+            {isRecording ? (
+              <div className="flex items-end gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={`w-1.5 rounded-full bg-emerald-500/80 ${
+                      index % 3 === 0
+                        ? 'h-3 animate-pulse'
+                        : index % 3 === 1
+                        ? 'h-5 animate-pulse'
+                        : 'h-4 animate-pulse'
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {!isRecorderSupported ? (
+              <p className="text-xs text-stone-500">
+                Your browser will open the audio recorder when you tap “Record expense”.
+              </p>
+            ) : null}
             <input
               ref={fileInputRef}
               type="file"

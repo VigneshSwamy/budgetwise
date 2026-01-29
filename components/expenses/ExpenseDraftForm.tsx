@@ -247,29 +247,44 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
         : null
       const categorySource = ruleCategory ? 'rule' : 'user'
 
-      const { error: draftError } = await supabase.from('expense_drafts').insert({
-        group_id: groupId,
-        created_by: user.id,
-        amount: parsedAmount,
-        merchant: trimmedMerchant || null,
-        date,
-        period_key: periodKey,
-        budget_impact: budgetImpact,
-        category: inferredCategory,
-        category_source: inferredCategory ? categorySource : 'user',
-        participants,
-        source: 'manual',
-        status: 'draft',
-      })
+      const { data: draftRow, error: draftError } = await supabase
+        .from('expense_drafts')
+        .insert({
+          group_id: groupId,
+          created_by: user.id,
+          amount: parsedAmount,
+          merchant: trimmedMerchant || null,
+          date,
+          period_key: periodKey,
+          budget_impact: budgetImpact,
+          category: inferredCategory,
+          category_source: inferredCategory ? categorySource : 'user',
+          participants,
+          source: 'manual',
+          status: 'draft',
+        })
+        .select('id')
+        .single()
 
-      if (draftError) {
-        setError(draftError.message)
+      if (draftError || !draftRow?.id) {
+        setError(draftError?.message || 'Unable to save the expense.')
         setLoading(false)
         return
       }
 
-      router.push(`/groups/${groupId}/expenses/drafts`)
+      const { error: confirmError } = await supabase.rpc('confirm_expense_draft', {
+        draft_id: draftRow.id,
+      })
+
+      if (confirmError) {
+        setError(confirmError.message)
+        setLoading(false)
+        return
+      }
+
+      router.push(`/groups/${groupId}/expenses`)
       router.refresh()
+      return
     } catch (err) {
       setError('An unexpected error occurred')
       setLoading(false)
@@ -650,7 +665,7 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
           disabled={loading}
           className="w-full rounded-lg bg-[#1f6f5b] px-4 py-2.5 font-medium text-white shadow-soft-sm transition hover:bg-[#195a4a] focus:outline-none focus:ring-2 focus:ring-sage-600 focus:ring-offset-2 disabled:opacity-50"
         >
-          {loading ? 'Saving draft...' : 'Save draft'}
+          {loading ? 'Saving expense...' : 'Save expense'}
         </button>
       </form>
     </div>
