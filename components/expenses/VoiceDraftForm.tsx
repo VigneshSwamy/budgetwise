@@ -269,7 +269,7 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
               ref={fileInputRef}
               type="file"
               accept="audio/*"
-              capture="microphone"
+              capture="user"
               onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
               className="sr-only"
             />
