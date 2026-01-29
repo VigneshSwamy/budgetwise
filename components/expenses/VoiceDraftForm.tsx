@@ -263,14 +263,32 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
           </label>
           <div className="mt-2 space-y-2">
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={isRecording ? handleStopRecording : handleStartRecording}
-                disabled={isTranscribing || loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-soft-sm hover:bg-stone-100 disabled:opacity-50"
-              >
-                {isRecording ? 'Stop recording' : 'Record expense'}
-              </button>
+              {shouldUseFileCapture ? (
+                <label
+                  htmlFor="voice-audio-input"
+                  className="relative inline-flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-soft-sm hover:bg-stone-100"
+                >
+                  Record expense
+                  <input
+                    id="voice-audio-input"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    capture="user"
+                    onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
+                    className="absolute inset-0 h-full w-full opacity-0"
+                  />
+                </label>
+              ) : (
+                <button
+                  type="button"
+                  onClick={isRecording ? handleStopRecording : handleStartRecording}
+                  disabled={isTranscribing || loading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-soft-sm hover:bg-stone-100 disabled:opacity-50"
+                >
+                  {isRecording ? 'Stop recording' : 'Record expense'}
+                </button>
+              )}
             </div>
             {isRecording ? (
               <div className="flex items-end gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -293,14 +311,16 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
                 Your browser will open the audio recorder when you tap “Record expense”.
               </p>
             ) : null}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*"
-              capture="user"
-              onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
-              className="sr-only"
-            />
+            {!shouldUseFileCapture ? (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                capture="user"
+                onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
+                className="sr-only"
+              />
+            ) : null}
             {recordedAudioUrl ? (
               <audio
                 controls
