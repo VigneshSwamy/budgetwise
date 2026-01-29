@@ -43,6 +43,13 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
     typeof window !== 'undefined' &&
     typeof MediaRecorder !== 'undefined' &&
     !!navigator.mediaDevices?.getUserMedia
+  const isNativeIOS =
+    typeof window !== 'undefined' &&
+    typeof (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor
+      ?.getPlatform === 'function' &&
+    (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() ===
+      'ios'
+  const shouldUseFileCapture = !isRecorderSupported || isNativeIOS
 
   const parsed = useMemo(() => parseVoiceText(voiceText), [voiceText])
 
@@ -184,7 +191,7 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
 
   const handleStartRecording = async () => {
     setError(null)
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    if (shouldUseFileCapture) {
       fileInputRef.current?.click()
       return
     }
@@ -281,7 +288,7 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
                 ))}
               </div>
             ) : null}
-            {!isRecorderSupported ? (
+            {shouldUseFileCapture ? (
               <p className="text-xs text-stone-500">
                 Your browser will open the audio recorder when you tap “Record expense”.
               </p>
