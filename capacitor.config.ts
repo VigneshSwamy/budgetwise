@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'BudgetWise',
   webDir: 'public',
   server: {
-    url: 'https://budgetwise-la0ylpblh-vigneshswamys-projects.vercel.app/',
+    url: 'https://budgetwise-kohl.vercel.app/',
     cleartext: false,
   },
 }

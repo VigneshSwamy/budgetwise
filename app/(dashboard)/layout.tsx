@@ -48,10 +48,17 @@ export default async function DashboardLayout({
 
   let avatarSignedUrl: string | null = null
   if (profile?.avatar_url) {
-    const { data } = await supabase.storage
+    const { data: publicData } = supabase.storage
       .from('avatars')
-      .createSignedUrl(profile.avatar_url, 60 * 60)
-    avatarSignedUrl = data?.signedUrl || null
+      .getPublicUrl(profile.avatar_url)
+    avatarSignedUrl = publicData?.publicUrl || null
+
+    if (!avatarSignedUrl) {
+      const { data } = await supabase.storage
+        .from('avatars')
+        .createSignedUrl(profile.avatar_url, 60 * 60 * 24 * 7)
+      avatarSignedUrl = data?.signedUrl || null
+    }
   }
 
   return (
