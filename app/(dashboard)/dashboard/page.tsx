@@ -222,7 +222,10 @@ export default async function DashboardPage() {
         })
 
         balances = members.map((member) => {
-          const profile = member.profiles as { display_name: string | null } | null
+          const profile =
+            (Array.isArray(member.profiles)
+              ? member.profiles[0]
+              : member.profiles) as { display_name: string | null } | null
           const totals = balanceMap.get(member.user_id) || { paid: 0, owed: 0 }
           return {
             user_id: member.user_id,
