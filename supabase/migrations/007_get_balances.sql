@@ -37,10 +37,11 @@ AS $$
   )
   SELECT
     gm.user_id,
-    pr.display_name,
+    COALESCE(pr.display_name, split_part(au.email, '@', 1)) AS display_name,
     COALESCE(p.paid_total, 0) - COALESCE(o.owed_total, 0) AS net_balance
   FROM group_members gm
   JOIN profiles pr ON pr.id = gm.user_id
+  LEFT JOIN auth.users au ON au.id = gm.user_id
   LEFT JOIN paid p ON p.user_id = gm.user_id
   LEFT JOIN owed o ON o.user_id = gm.user_id
   WHERE gm.group_id = $1;

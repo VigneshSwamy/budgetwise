@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 
 const MIN_WIDTH = 220
 const MAX_WIDTH = 360
@@ -13,10 +14,13 @@ export default function ResizableSidebar({
   sidebar: React.ReactNode
   children: React.ReactNode
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const [width, setWidth] = useState(MIN_WIDTH)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const draggingRef = useRef(false)
+  const showBack = pathname !== '/dashboard'
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY)
@@ -67,16 +71,27 @@ export default function ResizableSidebar({
   return (
     <div className="min-h-[100svh] w-full max-w-[100vw] overflow-x-hidden bg-[#FBF8F3] text-[#3D3D3D]">
       <div className="safe-area-top sticky top-0 z-40 flex items-center justify-between border-b border-[#E5E0D8] bg-white/95 px-4 py-3 backdrop-blur md:hidden">
+        <div className="flex items-center gap-3">
+          {showBack ? (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="relative z-50 flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-[#D6CFC4] bg-white text-xl font-semibold text-[#2F2F2F] shadow-soft-sm transition active:scale-95"
+            >
+              ←
+            </button>
+          ) : null}
+          <span className="text-sm font-semibold text-[#4A4A4A]">BudgetWise</span>
+        </div>
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation"
-          className="relative z-50 flex h-16 w-16 touch-manipulation items-center justify-center rounded-2xl border-2 border-[#D6CFC4] bg-white text-2xl font-semibold text-[#2F2F2F] shadow-xl shadow-[#E5E0D8]/80 ring-2 ring-[#F3EDE3] transition active:scale-95"
+          className="relative z-50 flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border-2 border-[#D6CFC4] bg-white text-xl font-semibold text-[#2F2F2F] shadow-soft-sm transition active:scale-95"
         >
           ☰
         </button>
-        <span className="text-sm font-semibold text-[#4A4A4A]">BudgetWise</span>
-        <div className="w-10" />
       </div>
 
       <aside

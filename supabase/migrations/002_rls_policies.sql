@@ -26,6 +26,18 @@ ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
+-- Users can read profiles of members in their groups
+CREATE POLICY "Members can view group profiles" ON profiles
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1
+      FROM group_members gm_self
+      JOIN group_members gm_other ON gm_self.group_id = gm_other.group_id
+      WHERE gm_self.user_id = auth.uid()
+        AND gm_other.user_id = profiles.id
+    )
+  );
+
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.uid() = id);

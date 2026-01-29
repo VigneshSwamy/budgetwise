@@ -53,6 +53,8 @@ After setting up the project, you need to run the database migrations:
      - Click "Run"
      - Repeat for `002_rls_policies.sql`
      - Repeat for `003_rpc_functions.sql`
+   - If you already ran an individual policy manually, you do not need to re-run
+     the whole migration file for that policy.
 
 2. **Option B: Using Supabase CLI**
    ```bash

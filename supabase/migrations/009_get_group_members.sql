@@ -29,9 +29,10 @@ BEGIN
   RETURN QUERY
   SELECT
     gm.user_id,
-    pr.display_name
+    COALESCE(pr.display_name, split_part(au.email, '@', 1)) AS display_name
   FROM group_members gm
   JOIN profiles pr ON pr.id = gm.user_id
+  LEFT JOIN auth.users au ON au.id = gm.user_id
   WHERE gm.group_id = get_group_members.group_id
   ORDER BY pr.display_name NULLS LAST;
 END;

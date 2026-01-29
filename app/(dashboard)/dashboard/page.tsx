@@ -3,8 +3,10 @@ import AddTransactionChooser from '@/components/expenses/AddTransactionChooser'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { getUserAndFirstGroup } from '@/lib/groups/getUserGroup'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
-  const { supabase, groups, firstGroupId, groupName } = await getUserAndFirstGroup()
+  const { supabase, user, groups, firstGroupId, groupName } = await getUserAndFirstGroup()
 
   const now = new Date()
   const periodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -22,6 +24,14 @@ export default async function DashboardPage() {
   }[] = []
   let categories: { id: string; name: string; spent: number }[] = []
   let balances: { user_id: string; display_name: string | null; net_balance: number }[] = []
+  let balanceDetails: {
+    user_id: string
+    display_name: string | null
+    net_balance: number
+    paid_total: number
+    owed_total: number
+  }[] = []
+  let overallSpent = 0
   let impactBreakdown: { budget_impact: number; split_only: number } | null = null
   let drafts: { id: string; merchant: string | null; amount: number; date: string }[] = []
 
@@ -138,6 +148,99 @@ export default async function DashboardPage() {
       })
     )
 
+    const paidByUser: Record<string, number> = {}
+    const owedByUser: Record<string, number> = {}
+
+    const { data: paidRows } = await supabase
+      .from('expense_payments')
+      .select('user_id, paid_amount, expenses!inner(group_id, period_key)')
+      .eq('expenses.group_id', firstGroupId)
+      .eq('expenses.period_key', periodKey)
+
+    ;(paidRows || []).forEach((row) => {
+      paidByUser[row.user_id] =
+        (paidByUser[row.user_id] || 0) + Number(row.paid_amount || 0)
+    })
+
+    const { data: owedRows } = await supabase
+      .from('expense_shares')
+      .select('user_id, owed_amount, expenses!inner(group_id, period_key)')
+      .eq('expenses.group_id', firstGroupId)
+      .eq('expenses.period_key', periodKey)
+
+    ;(owedRows || []).forEach((row) => {
+      owedByUser[row.user_id] =
+        (owedByUser[row.user_id] || 0) + Number(row.owed_amount || 0)
+    })
+
+    const hasTransactions = transactions.length > 0
+    const allZeroBalances =
+      balances.length > 0 && balances.every((row) => Math.abs(row.net_balance) < 0.01)
+
+    if (hasTransactions && allZeroBalances) {
+      const { data: members } = await supabase
+        .from('group_members')
+        .select('user_id, profiles(display_name)')
+        .eq('group_id', firstGroupId)
+
+      const { data: expenseRows } = await supabase
+        .from('expenses')
+        .select('draft_id')
+        .eq('group_id', firstGroupId)
+        .eq('period_key', periodKey)
+
+      const draftIds = (expenseRows || [])
+        .map((row) => row.draft_id)
+        .filter((id): id is string => Boolean(id))
+
+      if (draftIds.length > 0 && members && members.length > 0) {
+        const { data: draftRows } = await supabase
+          .from('expense_drafts')
+          .select('id, participants')
+          .in('id', draftIds)
+
+        const balanceMap = new Map<string, { paid: number; owed: number }>()
+        members.forEach((member) => {
+          balanceMap.set(member.user_id, { paid: 0, owed: 0 })
+        })
+
+        ;(draftRows || []).forEach((draft) => {
+          const participants = Array.isArray(draft.participants)
+            ? draft.participants
+            : []
+          participants.forEach((participant) => {
+            const entry = balanceMap.get(participant.user_id)
+            if (!entry) return
+            entry.paid += Number(participant.paid_amount || 0)
+            entry.owed += Number(participant.owed_amount || 0)
+          })
+        })
+
+        balanceMap.forEach((value, key) => {
+          paidByUser[key] = value.paid
+          owedByUser[key] = value.owed
+        })
+
+        balances = members.map((member) => {
+          const profile = member.profiles as { display_name: string | null } | null
+          const totals = balanceMap.get(member.user_id) || { paid: 0, owed: 0 }
+          return {
+            user_id: member.user_id,
+            display_name: profile?.display_name || null,
+            net_balance: totals.paid - totals.owed,
+          }
+        })
+      }
+    }
+
+    overallSpent = Object.values(paidByUser).reduce((sum, value) => sum + value, 0)
+
+    balanceDetails = balances.map((row) => ({
+      ...row,
+      paid_total: paidByUser[row.user_id] || 0,
+      owed_total: owedByUser[row.user_id] || 0,
+    }))
+
     const { data: insights } = await supabase.rpc('get_insights', {
       group_id: firstGroupId,
       period_key: periodKey,
@@ -148,6 +251,41 @@ export default async function DashboardPage() {
         budget_impact: Number(insights.budget_impact_breakdown.budget_impact || 0),
         split_only: Number(insights.budget_impact_breakdown.split_only || 0),
       }
+    }
+  }
+
+  if (balances.length > 0 && balanceDetails.length === 0) {
+    balanceDetails = balances.map((row) => ({
+      ...row,
+      paid_total: 0,
+      owed_total: 0,
+    }))
+  }
+
+  if (balanceDetails.length > 0) {
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in(
+        'id',
+        balanceDetails.map((row) => row.user_id)
+      )
+
+    const nameMap = new Map(
+      (profileRows || []).map((row) => [row.id, row.display_name])
+    )
+
+    balanceDetails = balanceDetails.map((row) => ({
+      ...row,
+      display_name:
+        nameMap.get(row.user_id) ||
+        row.display_name ||
+        (user?.id === row.user_id ? user.email?.split('@')[0] || null : null),
+    }))
+
+    const currentName = balanceDetails.find((row) => row.user_id === user?.id)?.display_name
+    if (user && currentName && !nameMap.get(user.id)) {
+      await supabase.from('profiles').update({ display_name: currentName }).eq('id', user.id)
     }
   }
 
@@ -366,28 +504,42 @@ export default async function DashboardPage() {
                 <span className="text-sm text-stone-500">Net position</span>
               </div>
               <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-soft-md">
-                {balances.length > 0 ? (
-                  <div className="space-y-3">
-                    {balances.map((balance) => (
-                      <div
-                        key={balance.user_id}
-                        className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-stone-100 px-4 py-3"
-                      >
-                        <div className="min-w-0 truncate text-sm font-medium text-stone-700">
-                          {balance.display_name || `Member ${balance.user_id.slice(0, 6)}`}
-                        </div>
+                {balanceDetails.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border border-stone-100 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+                      <span>Overall spent</span>
+                      <span className="font-semibold text-stone-800">
+                        ${overallSpent.toFixed(2)}
+                      </span>
+                    </div>
+                    {balanceDetails.map((balance) => {
+                      const net = balance.net_balance
+                      const netLabel = net >= 0 ? 'Gets back' : 'Owes'
+                      return (
                         <div
-                          className={`text-sm font-semibold ${
-                            balance.net_balance >= 0
-                              ? 'text-sage-700'
-                              : 'text-terracotta-600'
-                          }`}
+                          key={balance.user_id}
+                          className="rounded-lg border border-stone-100 px-4 py-3"
                         >
-                          {balance.net_balance >= 0 ? '+' : '-'}$
-                          {Math.abs(balance.net_balance).toFixed(2)}
+                          <div className="flex min-w-0 items-center justify-between gap-3">
+                            <div className="min-w-0 truncate text-sm font-medium text-stone-700">
+                              {balance.display_name ||
+                                `Member ${balance.user_id.slice(0, 6)}`}
+                            </div>
+                            <div
+                              className={`text-sm font-semibold ${
+                                net >= 0 ? 'text-sage-700' : 'text-terracotta-600'
+                              }`}
+                            >
+                              {netLabel} ${Math.abs(net).toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
+                            <span>Lent ${balance.paid_total.toFixed(2)}</span>
+                            <span>Borrowed ${balance.owed_total.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="text-sm text-stone-500">

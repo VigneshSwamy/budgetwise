@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getUserAndFirstGroup } from '@/lib/groups/getUserGroup'
-import { CategoryIcon } from '@/components/shared/CategoryIcon'
+import TransactionRow from '@/components/transactions/TransactionRow'
 
 export default async function TransactionsPage() {
   const { supabase, firstGroupId } = await getUserAndFirstGroup()
@@ -95,19 +95,14 @@ export default async function TransactionsPage() {
         {transactions.length > 0 ? (
           <div className="divide-y divide-stone-100">
             {transactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <CategoryIcon category={tx.category} />
-                  <div>
-                    <p className="font-medium text-stone-900">{tx.name}</p>
-                    <p className="text-sm text-stone-500">{tx.category}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-stone-900">-${tx.amount.toFixed(2)}</p>
-                  <p className="text-xs text-stone-400">{tx.date}</p>
-                </div>
-              </div>
+              <TransactionRow
+                key={tx.id}
+                id={tx.id}
+                name={tx.name}
+                category={tx.category}
+                amount={tx.amount}
+                date={tx.date}
+              />
             ))}
           </div>
         ) : (

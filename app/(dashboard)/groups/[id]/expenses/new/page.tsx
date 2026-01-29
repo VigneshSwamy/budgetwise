@@ -38,10 +38,10 @@ export default async function NewExpenseDraftPage({
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-stone-900">
-            New Expense Draft
+            New Expense
           </h1>
           <p className="mt-2 text-sm text-stone-500">
-            Create a draft, then confirm to finalize the expense.
+            Add the basics and we’ll split evenly across the group.
           </p>
         </div>
 

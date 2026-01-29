@@ -25,22 +25,21 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
     return now.toISOString().split('T')[0]
   })
   const [budgetImpact, setBudgetImpact] = useState(false)
-  const [category, setCategory] = useState('')
-  const [notes, setNotes] = useState('')
-  const [receiptUrl, setReceiptUrl] = useState('')
-  const [receiptFile, setReceiptFile] = useState<File | null>(null)
-  const [receiptParsing, setReceiptParsing] = useState(false)
-  const [receiptMessage, setReceiptMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [members, setMembers] = useState<
     { user_id: string; display_name: string | null }[]
   >([])
-  const [participants, setParticipants] = useState<
-    { user_id: string; paid_amount: number; owed_amount: number }[]
-  >([])
-  const [autoSplit, setAutoSplit] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [paidById, setPaidById] = useState<string>('')
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
+  const [splitMode, setSplitMode] = useState<
+    'equal' | 'amount' | 'percent' | 'shares' | 'adjustment'
+  >('equal')
+  const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({})
+  const [percentSplits, setPercentSplits] = useState<Record<string, string>>({})
+  const [shareSplits, setShareSplits] = useState<Record<string, string>>({})
+  const [adjustmentSplits, setAdjustmentSplits] = useState<Record<string, string>>({})
   const [merchantRules, setMerchantRules] = useState<MerchantRule[]>([])
 
   const parsedAmount = useMemo(() => parseFloat(amount), [amount])
@@ -57,6 +56,7 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
       }
 
       setCurrentUserId(user.id)
+      setPaidById(user.id)
 
       const { data: memberRows } = await supabase.rpc('get_group_members', {
         group_id: groupId,
@@ -64,20 +64,33 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
 
       const rows = memberRows || []
       setMembers(rows)
-
-      const initialParticipants = rows.map(
-        (member: { user_id: string }) => ({
-          user_id: member.user_id,
-          paid_amount: 0,
-          owed_amount: 0,
-        })
-      )
-
-      setParticipants(initialParticipants)
+      setSelectedMemberIds(rows.map((member: { user_id: string }) => member.user_id))
+      const seedMap: Record<string, string> = {}
+      rows.forEach((member: { user_id: string }) => {
+        seedMap[member.user_id] = ''
+      })
+      setExactAmounts(seedMap)
+      setPercentSplits(seedMap)
+      setShareSplits(seedMap)
+      setAdjustmentSplits(seedMap)
     }
 
     loadMembers()
   }, [groupId])
+
+  useEffect(() => {
+    if (members.length === 0) return
+    if (!paidById || !members.find((m) => m.user_id === paidById)) {
+      setPaidById(members[0].user_id)
+    }
+  }, [members, paidById])
+
+  useEffect(() => {
+    if (!paidById) return
+    if (!selectedMemberIds.includes(paidById)) {
+      setSelectedMemberIds((prev) => [...prev, paidById])
+    }
+  }, [paidById, selectedMemberIds])
 
   useEffect(() => {
     const loadRules = async () => {
@@ -96,100 +109,6 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
     loadRules()
   }, [])
 
-  useEffect(() => {
-    if (!autoSplit || members.length === 0) {
-      return
-    }
-
-    const amountValue = isNaN(parsedAmount) ? 0 : parsedAmount
-    const split = members.length > 0 ? amountValue / members.length : 0
-
-    setParticipants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        owed_amount: split,
-        paid_amount: p.user_id === currentUserId ? amountValue : p.paid_amount,
-      }))
-    )
-  }, [parsedAmount, members.length, autoSplit, currentUserId])
-
-  const updateParticipant = (
-    userId: string,
-    field: 'paid_amount' | 'owed_amount',
-    value: number
-  ) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.user_id === userId ? { ...p, [field]: value } : p
-      )
-    )
-  }
-
-  const handleSplitEqually = () => {
-    if (members.length === 0) return
-    const amountValue = isNaN(parsedAmount) ? 0 : parsedAmount
-    const split = members.length > 0 ? amountValue / members.length : 0
-    setAutoSplit(true)
-    setParticipants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        owed_amount: split,
-      }))
-    )
-  }
-
-  const handlePaidByMe = () => {
-    if (!currentUserId) return
-    const amountValue = isNaN(parsedAmount) ? 0 : parsedAmount
-    setParticipants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        paid_amount: p.user_id === currentUserId ? amountValue : 0,
-      }))
-    )
-  }
-
-  const handleReceiptChange = async (file: File | null) => {
-    setReceiptFile(file)
-    setReceiptMessage(null)
-    if (!file) return
-
-    setReceiptParsing(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const response = await fetch('/api/parse-receipt', {
-        method: 'POST',
-        body: formData,
-      })
-      const result = await response.json()
-      if (!response.ok) {
-        setReceiptMessage(result?.error || 'Unable to parse receipt.')
-        setReceiptParsing(false)
-        return
-      }
-
-      const receipt = result?.receipt
-      if (receipt?.amount) {
-        setAmount(String(receipt.amount))
-      }
-      if (receipt?.merchant) {
-        setMerchant(receipt.merchant)
-        const ruleCategory = applyMerchantRules(receipt.merchant, merchantRules)
-        setCategory(ruleCategory || categorizeMerchant(receipt.merchant))
-      }
-      if (receipt?.date) {
-        setDate(receipt.date)
-      }
-
-      setReceiptMessage('Receipt parsed. Review and save as a draft.')
-    } catch (err) {
-      setReceiptMessage('Unable to parse receipt.')
-    } finally {
-      setReceiptParsing(false)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -198,6 +117,18 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
     try {
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Please enter a valid amount')
+        setLoading(false)
+        return
+      }
+
+      if (members.length === 0 || !currentUserId) {
+        setError('Add at least one group member to split the expense.')
+        setLoading(false)
+        return
+      }
+
+      if (selectedMemberIds.length === 0) {
+        setError('Select at least one person to split with.')
         setLoading(false)
         return
       }
@@ -213,84 +144,122 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
       }
 
       const periodKey = getPeriodKey(date)
+      const selectedMembers = members.filter((member) =>
+        selectedMemberIds.includes(member.user_id)
+      )
+      const payerId = selectedMemberIds.includes(paidById)
+        ? paidById
+        : selectedMembers[0]?.user_id || currentUserId
 
-      let uploadedReceiptPath: string | null = receiptUrl || null
+      let participants: { user_id: string; paid_amount: number; owed_amount: number }[] = []
+      const amountValue = parsedAmount
 
-      if (receiptFile) {
-        const fileExt = receiptFile.name.split('.').pop() || 'pdf'
-        const filePath = `${groupId}/${user.id}/${Date.now()}.${fileExt}`
+      if (splitMode === 'equal') {
+        const split = amountValue / selectedMembers.length
+        participants = selectedMembers.map((member) => ({
+          user_id: member.user_id,
+          paid_amount: member.user_id === payerId ? amountValue : 0,
+          owed_amount: split,
+        }))
+      }
 
-        const { error: uploadError } = await supabase.storage
-          .from('receipts')
-          .upload(filePath, receiptFile, {
-            cacheControl: '3600',
-            upsert: false,
-          })
-
-        if (uploadError) {
-          setError(
-            uploadError.message ||
-              'Receipt upload failed. You can save without a receipt.'
-          )
+      if (splitMode === 'amount') {
+        const totals = selectedMembers.reduce((sum, member) => {
+          const value = parseFloat(exactAmounts[member.user_id] || '0')
+          return sum + (Number.isNaN(value) ? 0 : value)
+        }, 0)
+        if (Math.abs(totals - amountValue) > 0.01) {
+          setError('Exact amounts must add up to the total.')
           setLoading(false)
           return
         }
+        participants = selectedMembers.map((member) => ({
+          user_id: member.user_id,
+          paid_amount: member.user_id === payerId ? amountValue : 0,
+          owed_amount: parseFloat(exactAmounts[member.user_id] || '0') || 0,
+        }))
+      }
 
-        const { error: uploadRowError } = await supabase.from('uploads').insert({
-          user_id: user.id,
-          group_id: groupId,
-          file_url: filePath,
-          mime_type: receiptFile.type || null,
-          file_name: receiptFile.name,
-          file_size: receiptFile.size,
-          status: 'pending',
+      if (splitMode === 'percent') {
+        const totals = selectedMembers.reduce((sum, member) => {
+          const value = parseFloat(percentSplits[member.user_id] || '0')
+          return sum + (Number.isNaN(value) ? 0 : value)
+        }, 0)
+        if (Math.abs(totals - 100) > 0.01) {
+          setError('Percentages must add up to 100%.')
+          setLoading(false)
+          return
+        }
+        participants = selectedMembers.map((member) => ({
+          user_id: member.user_id,
+          paid_amount: member.user_id === payerId ? amountValue : 0,
+          owed_amount: (amountValue * (parseFloat(percentSplits[member.user_id] || '0') || 0)) / 100,
+        }))
+      }
+
+      if (splitMode === 'shares') {
+        const totalShares = selectedMembers.reduce((sum, member) => {
+          const value = parseFloat(shareSplits[member.user_id] || '0')
+          return sum + (Number.isNaN(value) ? 0 : value)
+        }, 0)
+        if (!totalShares || totalShares <= 0) {
+          setError('Add at least one share.')
+          setLoading(false)
+          return
+        }
+        participants = selectedMembers.map((member) => ({
+          user_id: member.user_id,
+          paid_amount: member.user_id === payerId ? amountValue : 0,
+          owed_amount:
+            (amountValue * (parseFloat(shareSplits[member.user_id] || '0') || 0)) /
+            totalShares,
+        }))
+      }
+
+      if (splitMode === 'adjustment') {
+        const base = amountValue / selectedMembers.length
+        const totals = selectedMembers.reduce((sum, member) => {
+          const adj = parseFloat(adjustmentSplits[member.user_id] || '0')
+          return sum + (Number.isNaN(adj) ? 0 : adj)
+        }, 0)
+        if (Math.abs(totals) > 0.01) {
+          setError('Adjustments must balance to $0.00.')
+          setLoading(false)
+          return
+        }
+        participants = selectedMembers.map((member) => {
+          const adj = parseFloat(adjustmentSplits[member.user_id] || '0') || 0
+          const owed = base + adj
+          return {
+            user_id: member.user_id,
+            paid_amount: member.user_id === payerId ? amountValue : 0,
+            owed_amount: owed,
+          }
         })
-
-        if (uploadRowError) {
-          setError(uploadRowError.message)
-          setLoading(false)
-          return
-        }
-
-        uploadedReceiptPath = filePath
       }
 
-      const paidTotal = participants.reduce(
-        (sum, p) => sum + (Number.isNaN(p.paid_amount) ? 0 : p.paid_amount),
-        0
-      )
-      const owedTotal = participants.reduce(
-        (sum, p) => sum + (Number.isNaN(p.owed_amount) ? 0 : p.owed_amount),
-        0
-      )
-
-      if (Math.abs(paidTotal - parsedAmount) > 0.01) {
-        setError('Paid total must equal the expense amount.')
-        setLoading(false)
-        return
-      }
-
-      if (Math.abs(owedTotal - parsedAmount) > 0.01) {
-        setError('Owed total must equal the expense amount.')
-        setLoading(false)
-        return
-      }
+      const trimmedMerchant = merchant.trim()
+      const ruleCategory = trimmedMerchant
+        ? applyMerchantRules(trimmedMerchant, merchantRules)
+        : null
+      const inferredCategory = trimmedMerchant
+        ? ruleCategory || categorizeMerchant(trimmedMerchant)
+        : null
+      const categorySource = ruleCategory ? 'rule' : 'user'
 
       const { error: draftError } = await supabase.from('expense_drafts').insert({
         group_id: groupId,
         created_by: user.id,
         amount: parsedAmount,
-        merchant: merchant || null,
+        merchant: trimmedMerchant || null,
         date,
         period_key: periodKey,
         budget_impact: budgetImpact,
-        category: category || null,
-        category_source: 'user',
+        category: inferredCategory,
+        category_source: inferredCategory ? categorySource : 'user',
         participants,
         source: 'manual',
         status: 'draft',
-        notes: notes || null,
-        receipt_url: uploadedReceiptPath,
       })
 
       if (draftError) {
@@ -305,6 +274,107 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
       setError('An unexpected error occurred')
       setLoading(false)
     }
+  }
+
+  const selectedMembers = members.filter((member) =>
+    selectedMemberIds.includes(member.user_id)
+  )
+  const perPersonAmount =
+    parsedAmount && selectedMembers.length
+      ? (parsedAmount / selectedMembers.length).toFixed(2)
+      : '0.00'
+
+  const totalShares = selectedMembers.reduce((sum, member) => {
+    const value = parseFloat(shareSplits[member.user_id] || '0')
+    return sum + (Number.isNaN(value) ? 0 : value)
+  }, 0)
+
+  const totalPercent = selectedMembers.reduce((sum, member) => {
+    const value = parseFloat(percentSplits[member.user_id] || '0')
+    return sum + (Number.isNaN(value) ? 0 : value)
+  }, 0)
+
+  const getAutoTargetId = (currentId: string) => {
+    const candidates = selectedMemberIds.filter((id) => id !== currentId)
+    return candidates[candidates.length - 1] || ''
+  }
+
+  const updateExactAmount = (memberId: string, value: string) => {
+    setExactAmounts((prev) => {
+      const next = { ...prev, [memberId]: value }
+      const targetId = getAutoTargetId(memberId)
+      if (!targetId || !parsedAmount || selectedMemberIds.length < 2) {
+        return next
+      }
+      const sumOthers = selectedMemberIds.reduce((sum, id) => {
+        if (id === targetId) return sum
+        const val = parseFloat(next[id] || '0')
+        return sum + (Number.isNaN(val) ? 0 : val)
+      }, 0)
+      const remaining = parsedAmount - sumOthers
+      next[targetId] = Number.isFinite(remaining) ? remaining.toFixed(2) : ''
+      return next
+    })
+  }
+
+  const updatePercentSplit = (memberId: string, value: string) => {
+    setPercentSplits((prev) => {
+      const next = { ...prev, [memberId]: value }
+      const targetId = getAutoTargetId(memberId)
+      if (!targetId || selectedMemberIds.length < 2) {
+        return next
+      }
+      const sumOthers = selectedMemberIds.reduce((sum, id) => {
+        if (id === targetId) return sum
+        const val = parseFloat(next[id] || '0')
+        return sum + (Number.isNaN(val) ? 0 : val)
+      }, 0)
+      const remaining = 100 - sumOthers
+      next[targetId] = Number.isFinite(remaining) ? remaining.toFixed(0) : ''
+      return next
+    })
+  }
+
+  const updateAdjustmentSplit = (memberId: string, value: string) => {
+    setAdjustmentSplits((prev) => {
+      const next = { ...prev, [memberId]: value }
+      const targetId = getAutoTargetId(memberId)
+      if (!targetId || selectedMemberIds.length < 2) {
+        return next
+      }
+      const sumOthers = selectedMemberIds.reduce((sum, id) => {
+        if (id === targetId) return sum
+        const val = parseFloat(next[id] || '0')
+        return sum + (Number.isNaN(val) ? 0 : val)
+      }, 0)
+      const remaining = -sumOthers
+      next[targetId] = Number.isFinite(remaining) ? remaining.toFixed(2) : ''
+      return next
+    })
+  }
+
+  const toggleMember = (memberId: string) => {
+    setSelectedMemberIds((prev) => {
+      const isSelected = prev.includes(memberId)
+      if (!isSelected) {
+        return [...prev, memberId]
+      }
+      if (prev.length <= 1) {
+        return prev
+      }
+      const next = prev.filter((id) => id !== memberId)
+      if (memberId === paidById) {
+        setPaidById(next[0] || '')
+      }
+      return next
+    })
+  }
+
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ').filter(Boolean)
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
   }
 
   return (
@@ -366,6 +436,198 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
           />
         </div>
 
+        <div className="rounded-xl border border-stone-200 bg-stone-50">
+          <div className="border-b border-stone-200 px-4 py-3">
+            <p className="text-sm font-semibold text-stone-700">Split options</p>
+            <p className="text-xs text-stone-500">
+              Split equally and choose who owes a share.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 border-b border-stone-200 px-4 py-3">
+            {[
+              { id: 'equal', label: '=', color: 'bg-emerald-500 text-white' },
+              { id: 'amount', label: '1.23', color: 'bg-amber-500 text-white' },
+              { id: 'percent', label: '%', color: 'bg-sky-500 text-white' },
+              { id: 'shares', label: '≡', color: 'bg-violet-500 text-white' },
+              { id: 'adjustment', label: '+/-', color: 'bg-rose-500 text-white' },
+            ].map((mode) => {
+              const isActive = splitMode === mode.id
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => setSplitMode(mode.id as typeof splitMode)}
+                  className={`flex h-10 min-w-[52px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition ${
+                    isActive
+                      ? `${mode.color} border-transparent`
+                      : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-100'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-stone-500 shadow-soft-sm">
+                {getInitials(
+                  members.find((member) => member.user_id === (paidById || currentUserId))
+                    ?.display_name || 'You'
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-stone-700">Paid by</p>
+                <select
+                  id="paidBy"
+                  value={paidById || currentUserId || ''}
+                  onChange={(e) => setPaidById(e.target.value)}
+                  className="mt-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700 shadow-soft-sm"
+                >
+                  {members.map((member) => (
+                    <option key={member.user_id} value={member.user_id}>
+                      {member.display_name || `Member ${member.user_id.slice(0, 6)}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="text-right text-xs text-stone-500">
+              {splitMode === 'equal' ? (
+                <>
+                  <p className="font-medium text-stone-700">${perPersonAmount}/person</p>
+                  <p>{selectedMembers.length} people</p>
+                </>
+              ) : null}
+              {splitMode === 'shares' ? (
+                <>
+                  <p className="font-medium text-stone-700">{totalShares || 0} total shares</p>
+                  <p>{selectedMembers.length} people</p>
+                </>
+              ) : null}
+              {splitMode === 'percent' ? (
+                <>
+                  <p className="font-medium text-stone-700">{totalPercent.toFixed(0)}% of 100%</p>
+                  <p>{Math.max(0, 100 - totalPercent).toFixed(0)}% left</p>
+                </>
+              ) : null}
+            </div>
+          </div>
+          <div className="border-t border-stone-200 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+              {splitMode === 'equal' && 'Split equally'}
+              {splitMode === 'amount' && 'Split by exact amounts'}
+              {splitMode === 'percent' && 'Split by percentages'}
+              {splitMode === 'shares' && 'Split by shares'}
+              {splitMode === 'adjustment' && 'Split by adjustment'}
+            </p>
+            <p className="mt-1 text-xs text-stone-500">
+              {splitMode === 'equal' && 'Select which people owe an equal share.'}
+              {splitMode === 'amount' && 'Specify exactly how much each person owes.'}
+              {splitMode === 'percent' && 'Enter the percentage split for each person.'}
+              {splitMode === 'shares' && 'Give each person a number of shares.'}
+              {splitMode === 'adjustment' &&
+                'Add adjustments; the remainder is split equally.'}
+            </p>
+            <div className="mt-3 space-y-2">
+              {members.map((member) => {
+                const isSelected = selectedMemberIds.includes(member.user_id)
+                return (
+                  <button
+                    key={member.user_id}
+                    type="button"
+                    onClick={() => toggleMember(member.user_id)}
+                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                      isSelected
+                        ? 'border-sage-200 bg-white shadow-soft-sm'
+                        : 'border-stone-200 bg-white/70 text-stone-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-500">
+                        {getInitials(member.display_name)}
+                      </div>
+                      <span className="text-sm font-medium text-stone-700">
+                        {member.display_name || `Member ${member.user_id.slice(0, 6)}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {splitMode === 'amount' ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={exactAmounts[member.user_id] || ''}
+                          onChange={(e) =>
+                            updateExactAmount(member.user_id, e.target.value)
+                          }
+                          placeholder="$0.00"
+                          className="w-24 rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : null}
+                      {splitMode === 'percent' ? (
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          max="100"
+                          value={percentSplits[member.user_id] || ''}
+                          onChange={(e) =>
+                            updatePercentSplit(member.user_id, e.target.value)
+                          }
+                          placeholder="0%"
+                          className="w-20 rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : null}
+                      {splitMode === 'shares' ? (
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          value={shareSplits[member.user_id] || ''}
+                          onChange={(e) =>
+                            setShareSplits((prev) => ({
+                              ...prev,
+                              [member.user_id]: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                          className="w-20 rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : null}
+                      {splitMode === 'adjustment' ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={adjustmentSplits[member.user_id] || ''}
+                          onChange={(e) =>
+                            updateAdjustmentSplit(member.user_id, e.target.value)
+                          }
+                          placeholder="+0.00"
+                          className="w-24 rounded-md border border-stone-200 bg-white px-2 py-1 text-sm text-stone-700"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : null}
+                      <span
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs ${
+                          isSelected
+                            ? 'border-sage-300 bg-sage-100 text-sage-700'
+                            : 'border-stone-200 text-stone-400'
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
           <input
             id="budgetImpact"
@@ -379,156 +641,9 @@ export default function ExpenseDraftForm({ groupId }: { groupId: string }) {
           </label>
         </div>
 
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-stone-700">
-            Category (optional)
-          </label>
-          <input
-            id="category"
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm shadow-soft-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-200"
-            placeholder="e.g., Groceries"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-stone-700">
-            Notes (optional)
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm shadow-soft-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-200"
-            rows={3}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-stone-700">
-            Receipt (optional)
-          </label>
-          <div className="mt-2 space-y-3">
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleReceiptChange(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-stone-600 file:mr-4 file:rounded-md file:border-0 file:bg-stone-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-stone-700 hover:file:bg-stone-200"
-            />
-            <input
-              type="url"
-              value={receiptUrl}
-              onChange={(e) => setReceiptUrl(e.target.value)}
-              placeholder="Or paste a receipt URL"
-              className="block w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm shadow-soft-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-200"
-            />
-          </div>
-          {receiptMessage ? (
-            <p className="mt-2 text-xs text-stone-600">{receiptMessage}</p>
-          ) : null}
-          {receiptParsing ? (
-            <p className="mt-1 text-xs text-stone-500">Parsing receipt...</p>
-          ) : null}
-          <p className="mt-2 text-xs text-stone-500">
-            If you upload a file, it will be saved to Supabase Storage.
-          </p>
-        </div>
-
-        <div className="space-y-4 rounded-xl border border-stone-200 bg-stone-50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-stone-700">Participants</p>
-              <p className="text-xs text-stone-500">
-                Split the expense across group members.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handlePaidByMe}
-                className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100"
-              >
-                Paid by me
-              </button>
-              <button
-                type="button"
-                onClick={handleSplitEqually}
-                className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100"
-              >
-                Split equally
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {members.map((member) => {
-              const participant = participants.find(
-                (p) => p.user_id === member.user_id
-              )
-              return (
-                <div
-                  key={member.user_id}
-                  className="grid grid-cols-1 gap-3 rounded-lg border border-stone-200 bg-white p-3 sm:grid-cols-3 sm:items-center"
-                >
-                  <div className="text-sm font-medium text-stone-700">
-                    {member.display_name || `Member ${member.user_id.slice(0, 6)}`}
-                  </div>
-                  <div>
-                    <label className="text-xs text-stone-500">Paid</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={participant?.paid_amount ?? 0}
-                      onChange={(e) =>
-                        updateParticipant(
-                          member.user_id,
-                          'paid_amount',
-                          parseFloat(e.target.value || '0')
-                        )
-                      }
-                      className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-stone-500">Owes</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={participant?.owed_amount ?? 0}
-                      onChange={(e) =>
-                        updateParticipant(
-                          member.user_id,
-                          'owed_amount',
-                          parseFloat(e.target.value || '0')
-                        )
-                      }
-                      className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-200"
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-stone-500">
-            <span>
-              Paid total: $
-              {participants
-                .reduce((sum, p) => sum + (p.paid_amount || 0), 0)
-                .toFixed(2)}
-            </span>
-            <span>
-              Owed total: $
-              {participants
-                .reduce((sum, p) => sum + (p.owed_amount || 0), 0)
-                .toFixed(2)}
-            </span>
-          </div>
-        </div>
+        <p className="text-xs text-stone-500">
+          We’ll split equally across selected people and auto‑categorize based on the merchant.
+        </p>
 
         <button
           type="submit"

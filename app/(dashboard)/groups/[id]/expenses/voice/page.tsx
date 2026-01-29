@@ -36,9 +36,9 @@ export default async function VoiceDraftPage({
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-stone-900">Voice Draft</h1>
+          <h1 className="text-3xl font-bold text-stone-900">Voice Expense</h1>
           <p className="mt-2 text-sm text-stone-500">
-            Paste what you said, we’ll parse the amount and merchant.
+            Record a short voice note and we’ll create the expense.
           </p>
         </div>
 
@@ -46,10 +46,10 @@ export default async function VoiceDraftPage({
 
         <div className="text-center">
           <Link
-            href={`/groups/${params.id}/expenses/drafts`}
+            href={`/groups/${params.id}/expenses`}
             className="text-sm font-medium text-stone-700 hover:text-sage-700 hover:underline"
           >
-            View drafts
+            View expenses
           </Link>
         </div>
       </div>
