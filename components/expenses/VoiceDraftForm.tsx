@@ -204,20 +204,37 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
   const handleStartRecording = async () => {
     setError(null)
     if (shouldUseNativeRecorder) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/381cab15-e338-453a-9307-0e2f79da04b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceDraftForm.tsx:handleStartRecording',message:'Native iOS recorder path entered',data:{platform:typeof window!=='undefined'?Capacitor.getPlatform():'ssr',isNativePlatform:typeof window!=='undefined'?Capacitor.isNativePlatform():null},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       try {
         const permission = await VoiceRecorder.hasAudioRecordingPermission()
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/381cab15-e338-453a-9307-0e2f79da04b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceDraftForm.tsx:permission',message:'hasAudioRecordingPermission result',data:{hasPermission:permission?.value},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         if (!permission.value) {
           const request = await VoiceRecorder.requestAudioRecordingPermission()
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/381cab15-e338-453a-9307-0e2f79da04b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceDraftForm.tsx:requestPermission',message:'requestAudioRecordingPermission result',data:{granted:request?.value},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           if (!request.value) {
             setError('Microphone permission denied.')
             return
           }
         }
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/381cab15-e338-453a-9307-0e2f79da04b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceDraftForm.tsx:beforeStart',message:'About to call VoiceRecorder.startRecording',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         await VoiceRecorder.startRecording()
         setIsRecording(true)
         return
       } catch (err) {
-        setError('Unable to start recording.')
+        // #region agent log
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const errName = err instanceof Error ? err.name : 'Unknown';
+        fetch('http://127.0.0.1:7242/ingest/381cab15-e338-453a-9307-0e2f79da04b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceDraftForm.tsx:catch',message:'startRecording threw',data:{errorMessage:errMsg,errorName:errName,errorString:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        setError(`Unable to start recording: ${err instanceof Error ? err.message : String(err)}`)
         setIsRecording(false)
         return
       }
