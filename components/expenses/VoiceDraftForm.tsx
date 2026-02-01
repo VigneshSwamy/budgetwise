@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
+import { VoiceRecorder } from 'capacitor-voice-recorder'
 import { createClient } from '@/lib/supabase/client'
 
 function getPeriodKey(dateValue: string) {
@@ -27,6 +29,16 @@ function parseVoiceText(text: string) {
   }
 }
 
+function base64ToBlob(base64: string, mimeType: string) {
+  const binary = atob(base64)
+  const len = binary.length
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new Blob([bytes], { type: mimeType })
+}
+
 export default function VoiceDraftForm({ groupId }: { groupId: string }) {
   const router = useRouter()
   const [voiceText, setVoiceText] = useState('')
@@ -45,11 +57,10 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
     !!navigator.mediaDevices?.getUserMedia
   const isNativeIOS =
     typeof window !== 'undefined' &&
-    typeof (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor
-      ?.getPlatform === 'function' &&
-    (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() ===
-      'ios'
-  const shouldUseFileCapture = !isRecorderSupported || isNativeIOS
+    Capacitor.isNativePlatform?.() &&
+    Capacitor.getPlatform() === 'ios'
+  const shouldUseNativeRecorder = isNativeIOS
+  const shouldUseFileCapture = !isRecorderSupported && !shouldUseNativeRecorder
 
   const parsed = useMemo(() => parseVoiceText(voiceText), [voiceText])
 
@@ -174,6 +185,7 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
   }
 
   const fileExtensionForMime = (type: string) => {
+    if (type.includes('aac')) return 'aac'
     if (type.includes('mp4')) return 'm4a'
     if (type.includes('ogg')) return 'ogg'
     return 'webm'
@@ -191,6 +203,26 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
 
   const handleStartRecording = async () => {
     setError(null)
+    if (shouldUseNativeRecorder) {
+      try {
+        const permission = await VoiceRecorder.hasAudioRecordingPermission()
+        if (!permission.value) {
+          const request = await VoiceRecorder.requestAudioRecordingPermission()
+          if (!request.value) {
+            setError('Microphone permission denied.')
+            return
+          }
+        }
+        await VoiceRecorder.startRecording()
+        setIsRecording(true)
+        return
+      } catch (err) {
+        setError('Unable to start recording.')
+        setIsRecording(false)
+        return
+      }
+    }
+
     if (shouldUseFileCapture) {
       fileInputRef.current?.click()
       return
@@ -243,6 +275,35 @@ export default function VoiceDraftForm({ groupId }: { groupId: string }) {
   }
 
   const handleStopRecording = () => {
+    if (shouldUseNativeRecorder) {
+      void (async () => {
+        try {
+          const { value } = await VoiceRecorder.stopRecording()
+          setIsRecording(false)
+          if (!value?.recordDataBase64) {
+            setError('No audio captured.')
+            return
+          }
+          const mimeType = value.mimeType || 'audio/aac'
+          const blob = base64ToBlob(value.recordDataBase64, mimeType)
+          const ext = fileExtensionForMime(mimeType)
+          const file = new File([blob], `voice-${Date.now()}.${ext}`, {
+            type: mimeType,
+          })
+          setRecordedAudioUrl(URL.createObjectURL(blob))
+          const transcript = await transcribeAudio(file)
+          if (transcript) {
+            setVoiceText(transcript)
+            await createExpenseFromText(transcript)
+          }
+        } catch (err) {
+          setError('Unable to stop recording.')
+          setIsRecording(false)
+        }
+      })()
+      return
+    }
+
     if (recorder && recorder.state !== 'inactive') {
       recorder.stop()
     }
